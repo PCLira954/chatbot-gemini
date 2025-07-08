@@ -29,43 +29,52 @@ sendBtn.addEventListener('click', async () => {
   statusMsg.innerText = "Processando...";
 
   try {
-    const body = {
-      contents: []
-    };
+    // Criar array de partes (texto e imagem)
+    const parts = [];
 
     if (userText) {
-      body.contents.push({
-        parts: [{ text: userText }]
-      });
+      parts.push({ text: userText });
     }
 
     if (imageFile) {
       const base64 = await toBase64(imageFile);
-      body.contents.push({
-        parts: [
-          {
-            inlineData: {
-              mimeType: imageFile.type,
-              data: base64
-            }
-          }
-        ]
+      parts.push({
+        inlineData: {
+          mimeType: imageFile.type,
+          data: base64
+        }
       });
     }
 
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=" + API_KEY, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
+    // Montar o corpo da requisição corretamente
+    const body = {
+      contents: [
+        {
+          parts: parts
+        }
+      ]
+    };
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=" + API_KEY,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
 
     const data = await response.json();
-    const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível responder.";
 
+    console.log("Resposta da API:", data); // debug
+
+    const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível responder.";
     addMessage(botReply, "bot");
     statusMsg.innerText = "";
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao chamar a API:", err);
     statusMsg.innerText = "Erro ao chamar a API.";
   }
 });
