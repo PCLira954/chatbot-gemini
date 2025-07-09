@@ -1,5 +1,4 @@
 const API_KEY = "AIzaSyBFpHI3wTBRwGV650Jo72gMX_MzdGDguOQ"; // Sua chave API
-// const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=" + API_KEY;
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY;
 
 const chatBox = document.getElementById('chat-box');
@@ -11,7 +10,7 @@ const statusMsg = document.getElementById('status-msg');
 // Adiciona mensagem ao chat
 function addMessage(text, sender) {
   const msg = document.createElement('div');
-  msg.className = message ${sender};
+  msg.className = `message ${sender}`;  // Corrigido aqui
   msg.textContent = text;
   chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -57,7 +56,7 @@ async function sendToGemini(text, imageBase64, mimeType) {
   });
 
   if (!response.ok) {
-    throw new Error(Erro na API: ${response.status});
+    throw new Error(`Erro na API: ${response.status}`); // Corrigido aqui
   }
 
   return await response.json();
@@ -94,8 +93,8 @@ sendBtn.addEventListener('click', async () => {
     addMessage(botReply, "bot");
   } catch (err) {
     console.error("Erro:", err);
-    addMessage(Erro: ${err.message}, "error");
+    addMessage(`Erro: ${err.message}`, "error"); // Corrigido aqui
   } finally {
-    statusMsg.innerText = "";
-  }
+    statusMsg.innerText = "";
+  }
 });
