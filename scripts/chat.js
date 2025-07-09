@@ -96,6 +96,6 @@ sendBtn.addEventListener('click', async () => {
     console.error("Erro:", err);
     addMessage(Erro: ${err.message}, "error");
   } finally {
-    statusMsg.innerText = "";
-  }
+    statusMsg.innerText = "";
+  }
 });
