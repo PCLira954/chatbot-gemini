@@ -15,12 +15,14 @@ function addMessage(text, sender) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-async function sendToGemini(parts) {
-  // Decide qual modelo usar baseado no input
-  const model = parts.some(part => part.inlineData) ? "gemini-pro-vision" : "gemini-pro";
-  
+async function callGeminiAPI(parts) {
+  // Define o modelo com base no input (texto ou imagem)
+  const model = parts.some(part => part.inlineData) 
+    ? "gemini-pro-vision" 
+    : "gemini-1.5-pro-latest"; // ou "gemini-1.5-flash-latest"
+
   const url = `${BASE_URL}${model}:generateContent?key=${API_KEY}`;
-  
+
   const body = {
     contents: [{
       parts: parts
@@ -34,7 +36,7 @@ async function sendToGemini(parts) {
   });
 
   if (!response.ok) {
-    throw new Error(`Erro na API: ${response.status}`);
+    throw new Error(`Erro na API: ${response.status} - ${response.statusText}`);
   }
 
   return await response.json();
@@ -45,7 +47,7 @@ sendBtn.addEventListener('click', async () => {
   const imageFile = imageInput.files[0];
 
   if (!userText && !imageFile) {
-    alert("Digite uma mensagem ou envie uma imagem.");
+    alert("Por favor, digite uma mensagem ou envie uma imagem.");
     return;
   }
 
@@ -71,17 +73,16 @@ sendBtn.addEventListener('click', async () => {
       });
     }
 
-    const data = await sendToGemini(parts);
+    const data = await callGeminiAPI(parts);
     console.log("Resposta da API:", data);
 
     const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 
-                     data?.candidates?.[0]?.content?.parts?.[0]?.text || 
-                     "Não foi possível obter uma resposta.";
+                     "Não foi possível gerar uma resposta.";
     addMessage(botReply, "bot");
     statusMsg.innerText = "";
   } catch (err) {
     console.error("Erro:", err);
-    addMessage(`Erro: ${err.message}`, "error");
+    addMessage(`Erro ao chamar a API: ${err.message}`, "error");
     statusMsg.innerText = "";
   }
 });
@@ -90,7 +91,7 @@ function toBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = error => reject(new Error("Falha ao ler a imagem"));
+    reader.onerror = (error) => reject(new Error("Falha ao ler a imagem"));
     reader.readAsDataURL(file);
   });
 }
