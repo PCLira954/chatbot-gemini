@@ -1,4 +1,5 @@
 const API_KEY = "AIzaSyBFpHI3wTBRwGV650Jo72gMX_MzdGDguOQ";
+const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 
 const chatBox = document.getElementById('chat-box');
 const sendBtn = document.getElementById('send-btn');
@@ -12,6 +13,31 @@ function addMessage(text, sender) {
   msg.textContent = text;
   chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendToGemini(parts) {
+  // Decide qual modelo usar baseado no input
+  const model = parts.some(part => part.inlineData) ? "gemini-pro-vision" : "gemini-pro";
+  
+  const url = `${BASE_URL}${model}:generateContent?key=${API_KEY}`;
+  
+  const body = {
+    contents: [{
+      parts: parts
+    }]
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Erro na API: ${response.status}`);
+  }
+
+  return await response.json();
 }
 
 sendBtn.addEventListener('click', async () => {
@@ -45,32 +71,18 @@ sendBtn.addEventListener('click', async () => {
       });
     }
 
-    const body = {
-      contents: [
-        {
-          parts: parts
-        }
-      ]
-    };
-
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=" + API_KEY,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      }
-    );
-
-    const data = await response.json();
+    const data = await sendToGemini(parts);
     console.log("Resposta da API:", data);
 
-    const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível responder.";
+    const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 
+                     data?.candidates?.[0]?.content?.parts?.[0]?.text || 
+                     "Não foi possível obter uma resposta.";
     addMessage(botReply, "bot");
     statusMsg.innerText = "";
   } catch (err) {
-    console.error("Erro ao chamar a API:", err);
-    statusMsg.innerText = "Erro ao chamar a API.";
+    console.error("Erro:", err);
+    addMessage(`Erro: ${err.message}`, "error");
+    statusMsg.innerText = "";
   }
 });
 
@@ -78,7 +90,7 @@ function toBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
+    reader.onerror = error => reject(new Error("Falha ao ler a imagem"));
     reader.readAsDataURL(file);
   });
 }
